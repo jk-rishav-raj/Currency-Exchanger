@@ -8,10 +8,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 const cacheRates = new Map();
+let oldTime = new Date();
+
 
 app.get("/", function(req, res) {
   res.sendFile(__dirname + "/index.html");
 });
+
 
 app.post("/", function(req, res) {
 
@@ -20,6 +23,19 @@ app.post("/", function(req, res) {
   const from = req.body.From;
   const API_KEY = "eacc1e233ba83770eb9853ec57e72f6c";
   const url = "http://data.fixer.io/api/latest?access_key=" + API_KEY ;
+
+  let currTime = new Date();
+
+  const seconds = Math.abs(currTime.getTime() - oldTime.getTime()) / 1000;
+
+  //console.log(seconds);
+
+  if(seconds > 60 * 15) {
+    console.log(seconds);
+    cacheRates.clear();
+    oldTime = Date.now();
+  }
+
 
   if(cacheRates.get(to) != undefined && cacheRates.get(from) != undefined) {
 
@@ -38,12 +54,12 @@ app.post("/", function(req, res) {
   request(url, function(error, response, body) {
 
     console.log("API Call");
-    
+
     if(error) {
         console.log(error);
         return ;
     }
-    
+
     console.log(response.statusCode);
 
     const data = JSON.parse(body);
@@ -57,7 +73,7 @@ app.post("/", function(req, res) {
     cacheRates.set('GBP', data.rates['GBP']);
     cacheRates.set('USD', data.rates['USD']);
     cacheRates.set('EUR', data.rates['EUR']);
-    
+
     const toRate = data.rates[to];
     const fromRate = data.rates[from];
 
